@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>The Culinary Dealer Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --card-w: 80px;
+            --card-h: 112px;
+            --brand-yellow: #FFD700;
+            --bg-dark: #0a0a0a;
+            --aaa-black: #000000;
+        }
+
+        @media (min-width: 640px) {
+            :root {
+                --card-w: 110px;
+                --card-h: 154px;
+            }
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: white;
+            font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+            overflow: hidden;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Scrollable 3D Arena */
+        #stage {
+            flex-grow: 1;
+            perspective: 1500px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 20px 10px 180px 10px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        #table {
+            position: relative;
+            width: 100%;
+            min-height: 800px;
+            background: radial-gradient(circle at center, #322114 0%, #1a0f0a 100%);
+            border-radius: 40px;
+            border: 6px solid #2d1b10;
+            transform: rotateX(20deg);
+            transform-style: preserve-3d;
+            box-shadow: 0 40px 100px rgba(0,0,0,0.9);
+            margin-top: 100px;
+            transition: min-height 0.3s ease;
+        }
+
+        .card {
+            position: absolute;
+            width: var(--card-w);
+            height: var(--card-h);
+            transition: transform 0.6s cubic-bezier(0.19, 1, 0.22, 1);
+            transform-style: preserve-3d;
+            left: 50%;
+            top: 50px;
+            margin-left: calc(var(--card-w) / -2);
+            z-index: 10;
+        }
+
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .card.face-up .card-inner { transform: rotateY(180deg); }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+
+        .card-back {
+            background: #2d1b10;
+            border: 2px solid var(--brand-yellow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+        }
+
+        .chef-choice-text {
+            color: var(--brand-yellow);
+            font-size: 10px;
+            font-weight: 900;
+            text-align: center;
+            line-height: 1.2;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: 1px solid rgba(255,215,0,0.3);
+            padding: 8px 4px;
+            width: 100%;
+        }
+
+        .card-front {
+            background: #ffffff;
+            transform: rotateY(180deg);
+            display: flex;
+            flex-direction: column;
+            padding: 8px;
+            color: #000;
+            border: 1px solid #ddd;
+        }
+
+        /* Buttons & UI */
+        #recipe-badge-btn {
+            position: fixed;
+            bottom: 110px;
+            right: 20px;
+            z-index: 1000;
+        }
+
+        .pulse { animation: pulse 2s infinite; }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(255, 215, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0); }
+        }
+
+        #recipe-drawer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 85vh;
+            background: #141414;
+            border-top: 5px solid var(--brand-yellow);
+            border-radius: 24px 24px 0 0;
+            transform: translateY(105%);
+            transition: transform 0.4s ease-out;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+        }
+        #recipe-drawer.open { transform: translateY(0); }
+
+        .aaa-btn {
+            background-color: var(--brand-yellow);
+            color: #000;
+            font-weight: 900;
+            text-transform: uppercase;
+            border: 3px solid #000;
+            box-shadow: 0 5px 0 #000;
+            border-radius: 12px;
+            transition: 0.1s;
+        }
+        .aaa-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #000; }
+
+        .action-icon-btn {
+            flex: 1;
+            background: #222;
+            color: var(--brand-yellow);
+            border: 2px solid #333;
+            padding: 16px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 900;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+
+        #toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: var(--brand-yellow);
+            color: #000;
+            padding: 12px 24px;
+            border-radius: 99px;
+            font-weight: 900;
+            z-index: 5000;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="toast">COPIED TO CLIPBOARD!</div>
+
+    <!-- Header -->
+    <div class="p-3 flex justify-between items-center bg-black/95 border-b border-white/10 z-[100]">
+        <div>
+            <h1 class="text-[9px] uppercase tracking-widest text-yellow-500 font-black">Dealer Session</h1>
+            <div id="status-text" class="text-sm font-bold">Chef's Table</div>
+        </div>
+        <button onclick="openPantry()" class="aaa-btn px-4 py-2 text-xs">Pantry</button>
+    </div>
+
+    <!-- Scrollable Arena -->
+    <div id="stage">
+        <div id="table">
+            <div id="card-layer" style="position: relative; width: 100%; height: 100%; transform-style: preserve-3d;"></div>
+        </div>
+    </div>
+
+    <!-- Recipe Badge -->
+    <div id="recipe-badge-btn">
+        <button onclick="toggleDrawer()" class="aaa-btn px-5 py-4 flex items-center gap-2 pulse">
+            <span id="badge-count">0</span> Recipes 📖
+        </button>
+    </div>
+
+    <!-- Bottom Controls -->
+    <div class="p-4 bg-zinc-950 grid grid-cols-2 gap-3 border-t border-white/10 z-[100]">
+        <button id="main-action" onclick="shuffleAndDeal()" class="aaa-btn py-4 text-sm">Shuffle & New</button>
+        <button id="draw-btn" onclick="drawOne()" class="aaa-btn py-4 text-sm bg-white">Draw Card</button>
+    </div>
+
+    <!-- Recipe Drawer -->
+    <div id="recipe-drawer">
+        <div class="p-4 flex justify-between items-center border-b border-white/10">
+            <h2 class="text-xl font-black text-yellow-400 uppercase">Discovered Recipes</h2>
+            <button onclick="toggleDrawer()" class="text-2xl">✕</button>
+        </div>
+        <div id="recipe-grid" class="flex-grow overflow-y-auto p-4 space-y-3"></div>
+    </div>
+
+    <!-- Detail Modal -->
+    <div id="detail-modal" class="fixed inset-0 bg-black/95 z-[3000] hidden overflow-y-auto p-4">
+        <div class="max-w-xl mx-auto bg-zinc-900 rounded-3xl overflow-hidden border-2 border-yellow-500 mb-20">
+            <div id="detail-content"></div>
+            <!-- Action Bar -->
+            <div class="p-6 bg-black/50 grid grid-cols-1 gap-4 border-t border-white/10">
+                <button onclick="saveRecipe()" class="action-icon-btn py-6">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
+                    <span class="text-lg mt-2">COPY FULL RECIPE</span>
+                </button>
+            </div>
+            <button onclick="closeDetail()" class="aaa-btn w-full py-5 rounded-none">Back to Dealer</button>
+        </div>
+    </div>
+
+    <!-- Pantry Search Modal -->
+    <div id="pantry-modal" class="fixed inset-0 bg-black/98 z-[4000] hidden flex-col p-6">
+        <div class="flex justify-between items-center">
+            <h2 class="text-2xl font-black text-yellow-500 uppercase">Ingredient Pantry</h2>
+            <button onclick="closePantry()" class="text-3xl">✕</button>
+        </div>
+        <input type="text" id="pantry-search" placeholder="Search ingredients..." class="mt-4 p-4 w-full bg-zinc-900 rounded-xl border-2 border-zinc-700 text-white outline-none font-bold focus:border-yellow-500">
+        <div id="pantry-grid" class="grid grid-cols-2 gap-2 mt-6 overflow-y-auto"></div>
+    </div>
+
+    <script>
+        const cardLayer = document.getElementById('card-layer');
+        const recipeGrid = document.getElementById('recipe-grid');
+        const pantryGrid = document.getElementById('pantry-grid');
+        const badgeCount = document.getElementById('badge-count');
+        const statusText = document.getElementById('status-text');
+        const pantrySearch = document.getElementById('pantry-search');
+        
+        let allIngredients = [];
+        let hand = [];
+        let discoveredRecipes = new Map();
+        let currentRecipeText = "";
+        const MAX_HAND = 24;
+
+        async function init() {
+            try {
+                const resp = await fetch('https://www.themealdb.com/api/json/v1/1/list.php?i=list');
+                const data = await resp.json();
+                allIngredients = data.meals;
+                renderPantry();
+                createDeckVisual();
+                
+                pantrySearch.addEventListener('input', (e) => {
+                    renderPantry(e.target.value);
+                });
+            } catch (err) {
+                console.error("Initialization failed", err);
+            }
+        }
+
+        function createCard(ing) {
+            const el = document.createElement('div');
+            el.className = 'card';
+            const color = `hsl(${Math.abs(ing.strIngredient.length * 55 % 360)}, 70%, 50%)`;
+            el.innerHTML = `
+                <div class="card-inner">
+                    <div class="card-face card-back">
+                        <div class="chef-choice-text">Chef's<br>Choice</div>
+                    </div>
+                    <div class="card-front card-face">
+                        <div class="h-1.5 w-full rounded-full mb-2" style="background:${color}"></div>
+                        <div class="flex-grow flex flex-col items-center justify-center text-center px-1">
+                            <span class="text-[9px] font-black opacity-30 uppercase tracking-tighter">Kitchen Item</span>
+                            <span class="text-[10px] font-bold leading-tight uppercase mt-1 uppercase">${ing.strIngredient}</span>
+                        </div>
+                        <div class="h-1.5 w-full rounded-full mt-2 rotate-180" style="background:${color}"></div>
+                    </div>
+                </div>
+            `;
+            return { el, data: ing };
+        }
+
+        function createDeckVisual() {
+            cardLayer.innerHTML = '';
+            hand = [];
+            for(let i=0; i<6; i++) {
+                const c = document.createElement('div');
+                c.className = 'card';
+                c.style.transform = `translateY(-140px) translateZ(${i*2}px)`;
+                c.innerHTML = `<div class="card-inner"><div class="card-face card-back"><div class="chef-choice-text">Chef's<br>Choice</div></div></div>`;
+                cardLayer.appendChild(c);
+            }
+        }
+
+        async function shuffleAndDeal() {
+            statusText.innerText = "Deck Shuffling...";
+            createDeckVisual();
+            await new Promise(r => setTimeout(r, 600));
+            for(let i=0; i<4; i++) await drawOne();
+            statusText.innerText = "Dealt 4 Ingredients";
+        }
+
+        async function drawOne(specific = null) {
+            if (hand.length >= MAX_HAND) return;
+            
+            let ing;
+            if (specific && typeof specific === 'object') {
+                ing = specific;
+            } else if (specific && typeof specific === 'string') {
+                ing = allIngredients.find(i => i.strIngredient === specific);
+            } else {
+                ing = allIngredients[Math.floor(Math.random()*allIngredients.length)];
+            }
+            
+            if (!ing) return;
+
+            const cardObj = createCard(ing);
+            cardLayer.appendChild(cardObj.el);
+            
+            cardObj.el.style.transform = `translateY(-140px) translateZ(50px)`;
+            await new Promise(r => setTimeout(r, 50));
+            
+            const cols = 4;
+            const isMobile = window.innerWidth < 640;
+            const spacingX = isMobile ? 85 : 130;
+            const spacingY = isMobile ? 120 : 170;
+            
+            const index = hand.length;
+            const row = Math.floor(index / cols);
+            const col = index % cols;
+            
+            const x = (col - (cols-1)/2) * spacingX;
+            const y = (row * spacingY); 
+            
+            hand.push(cardObj);
+            
+            cardObj.el.style.transform = `translate(${x}px, ${y}px) translateZ(80px) rotateZ(${Math.random()*4-2}deg)`;
+            await new Promise(r => setTimeout(r, 400));
+            
+            cardObj.el.classList.add('face-up');
+            cardObj.el.style.transform = `translate(${x}px, ${y}px) translateZ(${index}px) rotateZ(${Math.random()*4-2}deg)`;
+            
+            fetchRecipes(ing.strIngredient);
+            
+            const rowsCount = Math.ceil(hand.length / 4);
+            document.getElementById('table').style.minHeight = (rowsCount * spacingY + 350) + 'px';
+        }
+
+        async function fetchRecipes(ingName) {
+            const resp = await fetch(`https://www.themealdb.com/api/json/v1/1/filter.php?i=${ingName}`);
+            const data = await resp.json();
+            if (data && data.meals) {
+                data.meals.forEach(m => {
+                    if (!discoveredRecipes.has(m.idMeal)) discoveredRecipes.set(m.idMeal, m);
+                });
+                updateVault();
+            }
+        }
+
+        function updateVault() {
+            badgeCount.innerText = discoveredRecipes.size;
+            recipeGrid.innerHTML = Array.from(discoveredRecipes.values()).map(m => `
+                <div onclick="showRecipe('${m.idMeal}')" class="bg-zinc-800 border border-white/5 p-4 rounded-2xl flex items-center gap-4 active:scale-95 transition-transform cursor-pointer">
+                    <img src="${m.strMealThumb}" class="w-16 h-16 rounded-xl object-cover" />
+                    <div class="flex-grow">
+                        <h4 class="font-bold text-sm leading-tight text-white mb-1 uppercase">${m.strMeal}</h4>
+                        <span class="text-[10px] text-yellow-500 font-black uppercase tracking-widest">Open Instructions</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function showRecipe(id) {
+            const resp = await fetch(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${id}`);
+            const data = await resp.json();
+            const meal = data.meals[0];
+            const ings = [];
+            for (let i=1; i<=20; i++) {
+                if (meal[`strIngredient${i}`]) ings.push(`${meal[`strMeasure${i}`]} ${meal[`strIngredient${i}`]}`);
+            }
+
+            currentRecipeText = `RECIPE: ${meal.strMeal}\n\nINGREDIENTS:\n${ings.join('\n')}\n\nMETHOD:\n${meal.strInstructions}`;
+
+            document.getElementById('detail-content').innerHTML = `
+                <img src="${meal.strMealThumb}" class="w-full aspect-video object-cover border-b-4 border-yellow-500" />
+                <div class="p-8">
+                    <h2 class="text-4xl font-black mb-1 uppercase text-white leading-none">${meal.strMeal}</h2>
+                    <p class="text-yellow-500 text-sm font-black mb-8 uppercase tracking-[0.2em]">${meal.strCategory} | ${meal.strArea}</p>
+                    <h3 class="font-black mb-3 text-white border-b-2 border-white/10 pb-2 uppercase text-[10px] tracking-widest">Market List</h3>
+                    <ul class="text-[11px] text-zinc-400 grid grid-cols-1 md:grid-cols-2 gap-2 mb-8 italic">
+                        ${ings.map(i => `<li>• ${i}</li>`).join('')}
+                    </ul>
+                    <h3 class="font-black mb-3 text-white border-b-2 border-white/10 pb-2 uppercase text-[10px] tracking-widest">Chef's Method</h3>
+                    <p class="text-[11px] text-zinc-300 leading-relaxed whitespace-pre-line">${meal.strInstructions}</p>
+                </div>
+            `;
+            document.getElementById('detail-modal').classList.remove('hidden');
+        }
+
+        function saveRecipe() {
+            const el = document.createElement('textarea');
+            el.value = currentRecipeText;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            
+            const t = document.getElementById('toast');
+            t.style.transform = "translateX(-50%) translateY(0)";
+            setTimeout(() => t.style.transform = "translateX(-50%) translateY(-100px)", 2000);
+        }
+
+        function renderPantry(filter = '') {
+            const filtered = allIngredients.filter(i => 
+                i.strIngredient.toLowerCase().includes(filter.toLowerCase())
+            );
+            
+            pantryGrid.innerHTML = filtered.slice(0, 100).map(i => `
+                <div onclick="pantrySelect('${i.strIngredient}')" class="bg-zinc-900 p-5 rounded-2xl text-[11px] font-black uppercase border border-zinc-800 text-zinc-400 hover:border-yellow-500 hover:text-white transition-colors cursor-pointer">
+                    ${i.strIngredient}
+                </div>
+            `).join('');
+        }
+
+        function pantrySelect(name) {
+            drawOne(name);
+            closePantry();
+        }
+
+        function toggleDrawer() { document.getElementById('recipe-drawer').classList.toggle('open'); }
+        function openPantry() { document.getElementById('pantry-modal').classList.remove('hidden'); }
+        function closePantry() { document.getElementById('pantry-modal').classList.add('hidden'); }
+        function closeDetail() { document.getElementById('detail-modal').classList.add('hidden'); }
+
+        init();
+    </script>
+</body>
+</html>
